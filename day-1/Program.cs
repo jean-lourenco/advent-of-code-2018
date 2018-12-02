@@ -21,7 +21,6 @@ namespace day_1
         public static int Part1() => File
             .ReadAllText("input.txt")
             .Split(Environment.NewLine)
-            .Where(i => !String.IsNullOrWhiteSpace(i))
             .Select(int.Parse)
             .Sum();
 
@@ -30,7 +29,6 @@ namespace day_1
             var list = File
                 .ReadAllText("input.txt")
                 .Split(Environment.NewLine)
-                .Where(i => !String.IsNullOrWhiteSpace(i))
                 .Select(int.Parse);
             
             var seed = 0;
