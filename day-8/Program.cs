@@ -91,7 +91,6 @@ namespace day_8
             if (NumberOfChildren == 0)
                 return Metadata.Sum();
 
-//tentativa 54267293 (too high)
             return Metadata.Select(m => 
             {
                 if (m == 0)
