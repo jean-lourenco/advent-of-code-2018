@@ -9,16 +9,16 @@ namespace day_9
         public static void Main(string[] args)
         {
             //459 players; last marble is worth 71320 points
-            var part1 = Part1(459, 71320);
+            var part1 = Part1And2(459, 71320);
             System.Diagnostics.Debug.Assert(375414 == part1);
             Console.WriteLine($"Part1 - Highest score: {part1}");
 
-            var part2 = Part1(459, 71320 * 100);
+            var part2 = Part1And2(459, 71320 * 100);
             System.Diagnostics.Debug.Assert(3168033673 == part2);
             Console.WriteLine($"Part2 - Highest score with x100: {part2}");   
         }
         
-        public static long Part1(int numOfPlayers, long lastMarble)
+        public static long Part1And2(int numOfPlayers, long lastMarble)
         {
             var player = 0;
             var currentMarble = 0;
