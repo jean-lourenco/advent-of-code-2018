@@ -17,8 +17,6 @@ namespace day_17
             Console.WriteLine($"Part2 - Number of water tiles retained: {part2}");
         }
 
-        public static int Iterations = 0;
-
         public static (int part1, int part2) Part1()
         {
             var regex = new Regex(@"([a-zA-Z])=([0-9]+), ([a-zA-Z])=([0-9]+)..([0-9]+)");
