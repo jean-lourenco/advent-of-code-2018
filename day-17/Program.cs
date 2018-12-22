@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 
@@ -10,12 +9,17 @@ namespace day_17
     {
         public static void Main(string[] args)
         {
-            var part1 = Part1();
-            //System.Diagnostics.Debug.Assert(0 == part1);
+            var (part1, part2) = Part1();
+            System.Diagnostics.Debug.Assert(39649 == part1);
+            System.Diagnostics.Debug.Assert(28872 == part2);
+            
             Console.WriteLine($"Part1 - Number of water tiles covered: {part1}");
+            Console.WriteLine($"Part2 - Number of water tiles retained: {part2}");
         }
 
-        public static int Part1()
+        public static int Iterations = 0;
+
+        public static (int part1, int part2) Part1()
         {
             var regex = new Regex(@"([a-zA-Z])=([0-9]+), ([a-zA-Z])=([0-9]+)..([0-9]+)");
             var clayCoord = File
@@ -37,8 +41,12 @@ namespace day_17
                 .Select(c => c.Coord1 == 'y' ? c.Coord1Value : c.Coord2To)
                 .Max() + 1;
 
-            var underground = new char[maxY, maxX];
-            underground[0, 500] = '+';
+            var minY = clayCoord
+                .Select(c => c.Coord1 == 'y' ? c.Coord1Value : c.Coord2From)
+                .Min();
+
+            var matrix = new char[maxY, maxX];
+            matrix[0, 500] = '+';
 
             foreach (var clay in clayCoord)
             {
@@ -46,32 +54,35 @@ namespace day_17
                 for (var c = clay.Coord2From; c <= clay.Coord2To; c++)
                 {
                     if (rangeIsInX)
-                        underground[clay.Coord1Value, c] = '#';
+                        matrix[clay.Coord1Value, c] = '#';
                     else
-                        underground[c, clay.Coord1Value] = '#';
+                        matrix[c, clay.Coord1Value] = '#';
                 }
             }
 
-            while (!RayTraceDown(underground, (500, 1)))
-            {
-            }
+            for (var i = 0; i < 3; i++)
+                TraceDown(matrix, (500, 1));
 
-            Write(underground);
-            var sum = 0;
-            for (int y = 0; y < underground.GetUpperBound(0) + 1; y++)
+            var water = 0;
+            var sand = 0;
+            for (int y = minY; y < matrix.GetUpperBound(0) + 1; y++)
             {
-                for (int x = 0; x < underground.GetUpperBound(1) + 1; x++)
+                for (int x = 0; x < matrix.GetUpperBound(1) + 1; x++)
                 {
-                    var tile = underground[y, x];
-                    if (tile == '|' || tile == '~')
-                        sum++;
+                    var tile = matrix[y, x];
+
+                    if (tile == '|')
+                        sand++;
+
+                    if (tile == '~')
+                        water++;
                 }
             }
 
-            return sum;
+            return (sand + water, water);
         }
 
-        public static bool RayTraceDown(char[,] matrix, (int x, int y) initial)
+        public static bool TraceDown(char[,] matrix, (int x, int y) initial)
         {
             var (x, y) = initial;
             int leftX, rightX = 0;
@@ -82,6 +93,11 @@ namespace day_17
                 if (isEnclosed())
                     break;
 
+                var next = matrix[newY + 1, x];
+
+                if (next == '~' || next == '#')
+                    break;
+
                 matrix[newY++, x] = '|';
 
                 if (newY + 1 > matrix.GetUpperBound(0))
@@ -89,31 +105,45 @@ namespace day_17
                     matrix[newY, x] = '|';
                     return true;
                 }
-                //Console.WriteLine($"{x},{newY}");
-                var next = matrix[newY + 1, x];
+
+                next = matrix[newY + 1, x];
 
                 if (next == '~' || next == '#')
                     break;
             }
 
-            var fillChar = isEnclosed() ? '~' : '|';
-
-            for (var newX = leftX; newX <= rightX; newX++)
+            char lastChar = default;
+            while (newY >= y || isEnclosed())
             {
-                //Console.WriteLine($"{x},{newY}");
-                matrix[newY, newX] = fillChar;
+                lastChar = isEnclosed() ? '~' : '|';
+
+                for (var newX = leftX; newX <= rightX; newX++)
+                    matrix[newY, newX] = lastChar;
+
+                newY--;
+
+                if (lastChar == '|')
+                    break;
             }
+            newY++;
 
             var done = true;
-            if (fillChar == '|')
+
+            if (lastChar == '|')
             {
                 var leftBeneath = matrix[newY + 1, leftX];
                 if (leftBeneath != '#' && leftBeneath != '~')
-                    done = done && RayTraceDown(matrix, (leftX, newY + 1));
+                {
+                    var leftDone = TraceDown(matrix, (leftX, newY + 1));
+                    done = done && leftDone;
+                }
 
                 var rightBeneath = matrix[newY + 1, rightX];
                 if (rightBeneath != '#' && rightBeneath != '~')
-                    done = done && RayTraceDown(matrix, (rightX, newY + 1));
+                {
+                    var rightDone = TraceDown(matrix, (rightX, newY + 1));
+                    done = done && rightDone;
+                }
             }
             else
                 return false;
@@ -157,68 +187,5 @@ namespace day_17
                 return enclosed;
             }
         }
-
-        public static void Write(char[,] underground)
-        {
-            System.Text.StringBuilder sb = new System.Text.StringBuilder();
-            for (int y = 0; y < underground.GetUpperBound(0) + 1; y++)
-            {
-                sb.Append(y.ToString().PadLeft(2, '0'));
-                //for (int x = 494; x < underground.GetUpperBound(1) + 1; x++)
-                for (int x = 425; x < underground.GetUpperBound(1) + 1; x++)
-                {
-                    sb.Append(underground[y, x] == default(char) ? '.' : underground[y, x]);
-                }
-                sb.AppendLine("");
-            }
-
-            //System.Console.WriteLine(sb.ToString());
-            File.WriteAllText("output.txt", sb.ToString());
-        }
     }
 }
-
-/***
- * 
- * 
- *   444444444444455555555555555555
-  888999999999900000000001111111
-  789012345678901234567890123456
-00.............+................
-01.............|................
-02...........||||||.............
-03...........|####|.............
-04||||||||||||||||||||||||||||..
-05|############||############|..
-06|............||............|..
-07|.#..........||............|..
-08|.#..........||.........#..|..
-09|.#..........||.........#..|..
-10|.#..........||###......#..|..
-11|.#..........||.........#..|..
-12|.#..........||.........#..|..
-13|.#..........||.........#..|..
-14|.#..........||.........#..|..
-15|.#..........||###......#..|..
-16|.#..........||.........#..|..
-17|.#..........||.........#..|..
-18|.#######################..|..
-19|..........................|..
-  444444444444455555555555555555
-  888999999999900000000001111111
-  789012345678901234567890123456
-  
-  
-x=636, y=158..169
-y=445, x=630..650
-
-
-y=3, x=499..502
-y=5, x=488..499
-y=5, x=502..513
-x=489, y=7..18
-x=511, y=8..18
-y=18, x=489..511
-y=10, x=502..504
-y=15, x=502..504
-*/
